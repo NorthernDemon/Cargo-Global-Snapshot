@@ -1,10 +1,10 @@
-package com.global.snapshot.actos
+package com.global.snapshot.actors
 
 import akka.actor.{Actor, ActorLogging, Props}
 import com.global.snapshot.Config
-import com.global.snapshot.actos.CargoManager.{Start, Stop}
-import com.global.snapshot.actos.CargoScheduler.StartScheduling
-import com.global.snapshot.actos.CargoStation.Connect
+import com.global.snapshot.actors.CargoManager.{Start, Stop}
+import com.global.snapshot.actors.CargoScheduler.StartScheduling
+import com.global.snapshot.actors.CargoStation.Connect
 
 class CargoManager
   extends Actor with ActorLogging {

@@ -1,8 +1,8 @@
-package com.global.snapshot.actos
+package com.global.snapshot.actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.global.snapshot.actos.CargoScheduler.StartScheduling
-import com.global.snapshot.actos.CargoStation.{Connect, Load, Unload}
+import com.global.snapshot.actors.CargoScheduler.StartScheduling
+import com.global.snapshot.actors.CargoStation.{Connect, Load, Unload}
 
 class CargoStation(stationName: String,
                    initialCargoCount: Long)

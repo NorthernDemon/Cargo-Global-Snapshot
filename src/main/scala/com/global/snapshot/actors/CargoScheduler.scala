@@ -1,9 +1,9 @@
-package com.global.snapshot.actos
+package com.global.snapshot.actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
 import com.global.snapshot.Config
-import com.global.snapshot.actos.CargoScheduler.{ScheduleUnload, StartScheduling}
-import com.global.snapshot.actos.CargoStation.Unload
+import com.global.snapshot.actors.CargoScheduler.{ScheduleUnload, StartScheduling}
+import com.global.snapshot.actors.CargoStation.Unload
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

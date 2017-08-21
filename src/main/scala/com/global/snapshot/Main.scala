@@ -1,8 +1,8 @@
 package com.global.snapshot
 
 import akka.actor.ActorSystem
-import com.global.snapshot.actos.CargoManager
-import com.global.snapshot.actos.CargoManager.{Start, Stop}
+import com.global.snapshot.actors.CargoManager
+import com.global.snapshot.actors.CargoManager.{Start, Stop}
 
 import scala.io.StdIn
 

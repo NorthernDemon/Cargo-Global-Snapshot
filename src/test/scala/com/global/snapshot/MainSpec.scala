@@ -2,8 +2,8 @@ package com.global.snapshot
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
-import com.global.snapshot.actos.CargoStation
-import com.global.snapshot.actos.CargoStation.Load
+import com.global.snapshot.actors.CargoStation
+import com.global.snapshot.actors.CargoStation.Load
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.duration._
