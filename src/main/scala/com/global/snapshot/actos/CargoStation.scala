@@ -1,17 +1,17 @@
-package com.global.snapshot
+package com.global.snapshot.actos
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
-import com.global.snapshot.CargoScheduler.ScheduleUnload
-import com.global.snapshot.CargoStation.{Connect, Load, Unload}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.global.snapshot.actos.CargoScheduler.StartScheduling
+import com.global.snapshot.actos.CargoStation.{Connect, Load, Unload}
 
 class CargoStation(stationName: String,
                    initialCargoCount: Long)
   extends Actor with ActorLogging {
 
-  var scheduler: Cancellable = _
+  require(stationName.nonEmpty)
+  require(initialCargoCount >= 0)
+
+  var cargoSchedulerActor: ActorRef = _
 
   var cargoCount: Long = 0
   var incomingChannels: Set[ActorRef] = _
@@ -28,14 +28,15 @@ class CargoStation(stationName: String,
 
   def receive = {
 
+    case StartScheduling =>
+      cargoSchedulerActor = context.actorOf(CargoScheduler.props(self, outgoingChannels), s"${self.path.name}Scheduler")
+      cargoSchedulerActor ! StartScheduling
+
     case Connect(incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
       log.info(s"Connecting $stationName station to " +
         s"incoming channels $incomingChannels and outgoing channels $outgoingChannels")
       this.incomingChannels = incomingChannels
       this.outgoingChannels = outgoingChannels
-
-      val cargoScheduler = context.actorOf(CargoScheduler.props(self, outgoingChannels))
-      scheduler = context.system.scheduler.schedule(1 second, 50 millis, cargoScheduler, ScheduleUnload)
 
     case Unload(outgoingCargo: Long, outgoingChannel: ActorRef) =>
       if (outgoingChannels.contains(outgoingChannel)) {
