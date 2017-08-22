@@ -1,6 +1,6 @@
 package com.global.snapshot.actors
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
+import akka.actor.{ActorRef, Cancellable, Props}
 import com.global.snapshot.Config
 import com.global.snapshot.actors.CargoScheduler.{ScheduleUnload, StartScheduling}
 import com.global.snapshot.actors.CargoStation.Unload
@@ -10,11 +10,11 @@ import scala.concurrent.duration._
 
 class CargoScheduler(cargoStation: ActorRef,
                      initialOutgoingChannels: Seq[ActorRef])
-  extends Actor with ActorLogging {
+  extends CargoActor {
 
   require(initialOutgoingChannels.nonEmpty)
 
-  var cargoScheduler: Option[Cancellable] = _
+  var cargoScheduler: Option[Cancellable] = None
 
   val random = new scala.util.Random
   var outgoingChannels: Seq[ActorRef] = _
@@ -28,18 +28,16 @@ class CargoScheduler(cargoStation: ActorRef,
     case StartScheduling =>
       cargoScheduler match {
         case Some(scheduler) =>
-          if (!scheduler.isCancelled) {
-            scheduler.cancel()
-          }
-        case _ =>
-          cargoScheduler = Some(context.system.scheduler.schedule(1 second, 10 seconds, self, ScheduleUnload))
+          if (!scheduler.isCancelled) scheduler.cancel()
+        case None =>
       }
+      cargoScheduler = Some(context.system.scheduler.schedule(1 second, 10 seconds, self, ScheduleUnload))
 
     case ScheduleUnload =>
       cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel)
 
     case event =>
-      log.error(s"Cargo scheduler for $cargoStation received an unknown event $event")
+      super.receive(event)
   }
 
   private def getRandomCargo: Long =

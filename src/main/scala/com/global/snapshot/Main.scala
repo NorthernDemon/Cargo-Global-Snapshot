@@ -1,23 +1,23 @@
 package com.global.snapshot
 
 import akka.actor.ActorSystem
-import com.global.snapshot.actors.CargoManager
-import com.global.snapshot.actors.CargoManager.{Start, Stop}
+import com.global.snapshot.actors.CargoStations
+import com.global.snapshot.actors.CargoStations.{Start, Stop}
 
 import scala.io.StdIn
 
 object Main extends App {
 
-  val system = ActorSystem("cargo-network")
+  val system = ActorSystem("cargo")
 
   try {
-    val cargoManager = system.actorOf(CargoManager.props, "cargoManager")
-    cargoManager ! Start
+    val stations = system.actorOf(CargoStations.props, "stations")
+    stations ! Start
 
     println(">>> Press ENTER to exit <<<")
     StdIn.readLine()
 
-    cargoManager ! Stop
+    stations ! Stop
   } finally {
     system.terminate()
   }

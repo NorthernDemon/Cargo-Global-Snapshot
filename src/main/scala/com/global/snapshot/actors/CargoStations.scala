@@ -1,13 +1,13 @@
 package com.global.snapshot.actors
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.Props
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoManager.{Start, Stop}
 import com.global.snapshot.actors.CargoScheduler.StartScheduling
 import com.global.snapshot.actors.CargoStation.Connect
+import com.global.snapshot.actors.CargoStations.{Start, Stop}
 
-class CargoManager
-  extends Actor with ActorLogging {
+class CargoStations
+  extends CargoActor {
 
   override def receive = {
 
@@ -43,15 +43,15 @@ class CargoManager
       context stop self
 
     case event =>
-      log.error(s"Cargo manager received an unknown event $event")
+      super.receive(event)
   }
 }
 
-object CargoManager {
+object CargoStations {
   def props: Props =
-    Props(new CargoManager)
+    Props(new CargoStations)
 
-  sealed trait CargoManagerOperations
-  case object Start extends CargoManagerOperations
-  case object Stop extends CargoManagerOperations
+  sealed trait CargoStationsOperations
+  case object Start extends CargoStationsOperations
+  case object Stop extends CargoStationsOperations
 }
