@@ -12,10 +12,10 @@ class CargoManager
   override def receive = {
 
     case Start =>
-      val stockholm = context.actorOf(CargoStation.props("Stockholm", Config.cargoStationsCount), "stockholm")
-      val copenhagen = context.actorOf(CargoStation.props("Copenhagen", Config.cargoStationsCount), "copenhagen")
-      val helsinki = context.actorOf(CargoStation.props("Helsinki", Config.cargoStationsCount), "helsinki")
-      val oslo = context.actorOf(CargoStation.props("Oslo", Config.cargoStationsCount), "oslo")
+      val stockholm = context.actorOf(CargoStation.props(Config.cargoStationsCount), "stockholm")
+      val copenhagen = context.actorOf(CargoStation.props(Config.cargoStationsCount), "copenhagen")
+      val helsinki = context.actorOf(CargoStation.props(Config.cargoStationsCount), "helsinki")
+      val oslo = context.actorOf(CargoStation.props(Config.cargoStationsCount), "oslo")
 
       stockholm ! Connect(
         incomingChannels = Set(copenhagen, helsinki),

@@ -4,12 +4,12 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.global.snapshot.actors.CargoScheduler.StartScheduling
 import com.global.snapshot.actors.CargoStation.{Connect, Load, Unload}
 
-class CargoStation(stationName: String,
-                   initialCargoCount: Long)
+class CargoStation(initialCargoCount: Long)
   extends Actor with ActorLogging {
 
-  require(stationName.nonEmpty)
   require(initialCargoCount >= 0)
+
+  val stationName = this.self.path.name
 
   var cargoSchedulerActor: ActorRef = _
 
@@ -29,7 +29,7 @@ class CargoStation(stationName: String,
   def receive = {
 
     case StartScheduling =>
-      cargoSchedulerActor = context.actorOf(CargoScheduler.props(self, outgoingChannels), s"${self.path.name}Scheduler")
+      cargoSchedulerActor = context.actorOf(CargoScheduler.props(self, outgoingChannels), s"${stationName}Scheduler")
       cargoSchedulerActor ! StartScheduling
 
     case Connect(incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
@@ -66,8 +66,8 @@ class CargoStation(stationName: String,
 }
 
 object CargoStation {
-  def props(stationName: String, initialCargoCount: Long): Props =
-    Props(new CargoStation(stationName, initialCargoCount))
+  def props(initialCargoCount: Long): Props =
+    Props(new CargoStation(initialCargoCount))
 
   sealed trait CargoStationOperations
   case class Connect(incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) extends CargoStationOperations
