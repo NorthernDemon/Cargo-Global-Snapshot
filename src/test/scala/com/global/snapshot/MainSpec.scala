@@ -22,8 +22,8 @@ class MainSpec(_system: ActorSystem)
 
   "cargo actor" should "pass on a load message" in {
     val testProbe = TestProbe()
-    val mikkeli = system.actorOf(CargoStation.props(0), "mikkeli")
-    val pushkin = system.actorOf(CargoStation.props(1), "pushkin")
+    val mikkeli = system.actorOf(CargoStation.props, "mikkeli")
+    val pushkin = system.actorOf(CargoStation.props, "pushkin")
     mikkeli ! Load(1, pushkin)
     testProbe.expectMsg(1 second, Load(1, pushkin))
   }

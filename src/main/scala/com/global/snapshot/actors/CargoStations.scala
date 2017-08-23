@@ -2,8 +2,8 @@ package com.global.snapshot.actors
 
 import akka.actor.Props
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoScheduler.StartScheduling
-import com.global.snapshot.actors.CargoStation.Connect
+import com.global.snapshot.actors.CargoScheduler.ScheduleUnload
+import com.global.snapshot.actors.CargoStation.Initialize
 import com.global.snapshot.actors.CargoStations.{Start, Stop}
 
 class CargoStations
@@ -12,32 +12,36 @@ class CargoStations
   override def receive = {
 
     case Start =>
-      val stockholm = context.actorOf(CargoStation.props(Config.cargoStationsCount), "stockholm")
-      val copenhagen = context.actorOf(CargoStation.props(Config.cargoStationsCount), "copenhagen")
-      val helsinki = context.actorOf(CargoStation.props(Config.cargoStationsCount), "helsinki")
-      val oslo = context.actorOf(CargoStation.props(Config.cargoStationsCount), "oslo")
+      val stockholm = context.actorOf(CargoStation.props, "stockholm")
+      val copenhagen = context.actorOf(CargoStation.props, "copenhagen")
+      val helsinki = context.actorOf(CargoStation.props, "helsinki")
+      val oslo = context.actorOf(CargoStation.props, "oslo")
 
-      stockholm ! Connect(
+      stockholm ! Initialize(
+        initialCargoCount = Config.cargoInitialCount,
         incomingChannels = Set(copenhagen, helsinki),
         outgoingChannels = Set(oslo)
       )
-      copenhagen ! Connect(
+      copenhagen ! Initialize(
+        initialCargoCount = Config.cargoInitialCount,
         incomingChannels = Set(oslo),
         outgoingChannels = Set(stockholm, helsinki)
       )
-      helsinki ! Connect(
+      helsinki ! Initialize(
+        initialCargoCount = Config.cargoInitialCount,
         incomingChannels = Set(copenhagen),
         outgoingChannels = Set(stockholm, oslo)
       )
-      oslo ! Connect(
+      oslo ! Initialize(
+        initialCargoCount = Config.cargoInitialCount,
         incomingChannels = Set(stockholm, helsinki),
         outgoingChannels = Set(copenhagen)
       )
 
-      stockholm ! StartScheduling
-      copenhagen ! StartScheduling
-      helsinki ! StartScheduling
-      oslo ! StartScheduling
+      stockholm ! ScheduleUnload
+      copenhagen ! ScheduleUnload
+      helsinki ! ScheduleUnload
+      oslo ! ScheduleUnload
 
     case Stop =>
       context stop self

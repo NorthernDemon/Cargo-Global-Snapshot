@@ -2,7 +2,7 @@ package com.global.snapshot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoScheduler.{ScheduleUnload, StartScheduling}
+import com.global.snapshot.actors.CargoScheduler.{ScheduleRandomUnloader, ScheduleUnload}
 import com.global.snapshot.actors.CargoStation.Unload
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,7 +17,7 @@ class CargoScheduler(cargoStation: ActorRef,
   var cargoScheduler: Option[Cancellable] = None
 
   val random = new scala.util.Random
-  var outgoingChannels: Seq[ActorRef] = _
+  var outgoingChannels: Seq[ActorRef] = Seq.empty[ActorRef]
 
   override def preStart() = {
     this.outgoingChannels = initialOutgoingChannels
@@ -25,15 +25,21 @@ class CargoScheduler(cargoStation: ActorRef,
 
   override def receive = {
 
-    case StartScheduling =>
+    case ScheduleUnload =>
       cargoScheduler match {
-        case Some(scheduler) =>
-          if (!scheduler.isCancelled) scheduler.cancel()
+        case Some(scheduler) => if (!scheduler.isCancelled) scheduler.cancel()
         case None =>
       }
-      cargoScheduler = Some(context.system.scheduler.schedule(1 second, 10 seconds, self, ScheduleUnload))
+      cargoScheduler = Some(
+        context.system.scheduler.schedule(
+          initialDelay = 1 second,
+          interval = 10 seconds,
+          receiver = self,
+          message = ScheduleRandomUnloader
+        )
+      )
 
-    case ScheduleUnload =>
+    case ScheduleRandomUnloader =>
       cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel)
 
     case event =>
@@ -55,6 +61,6 @@ object CargoScheduler {
     Props(new CargoScheduler(cargoStation, outgoingChannels.toSeq))
 
   sealed trait CargoSchedulerOperations
-  case object StartScheduling extends CargoSchedulerOperations
   case object ScheduleUnload extends CargoSchedulerOperations
+  case object ScheduleRandomUnloader extends CargoSchedulerOperations
 }

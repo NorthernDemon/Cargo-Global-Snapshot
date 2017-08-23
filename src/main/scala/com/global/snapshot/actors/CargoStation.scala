@@ -1,69 +1,62 @@
 package com.global.snapshot.actors
 
 import akka.actor.{ActorRef, Props}
-import com.global.snapshot.actors.CargoScheduler.StartScheduling
-import com.global.snapshot.actors.CargoStation.{Connect, Load, Unload}
+import com.global.snapshot.actors.CargoScheduler.ScheduleUnload
+import com.global.snapshot.actors.CargoStation.{Initialize, Load, Unload}
 
-class CargoStation(initialCargoCount: Long)
+class CargoStation
   extends CargoActor {
-
-  require(initialCargoCount >= 0)
-
-  val stationName = name(this.self)
 
   var cargoSchedulerActor: Option[ActorRef] = None
 
   var cargoCount: Long = 0
-  var incomingChannels: Set[ActorRef] = _
-  var outgoingChannels: Set[ActorRef] = _
-
-  override def preStart() = {
-    this.cargoCount = initialCargoCount
-    log.info(s"Ramping up $stationName with $cargoCount cargo")
-  }
+  var incomingChannels: Set[ActorRef] = Set.empty[ActorRef]
+  var outgoingChannels: Set[ActorRef] = Set.empty[ActorRef]
 
   override def postStop() = {
-    log.info(s"Shutting down $stationName with $cargoCount cargo left")
+    log.info(s"Shutting down $name with $cargoCount cargo left")
   }
 
   override def receive = {
 
-    case StartScheduling =>
+    case ScheduleUnload =>
       cargoSchedulerActor match {
         case Some(scheduler) =>
-          scheduler ! StartScheduling
+          scheduler ! ScheduleUnload
         case None =>
-          val scheduler = context.actorOf(CargoScheduler.props(self, outgoingChannels), s"${stationName}Scheduler")
+          val scheduler = context.actorOf(CargoScheduler.props(self, outgoingChannels), s"${name}Scheduler")
           cargoSchedulerActor = Some(scheduler)
-          scheduler ! StartScheduling
+          scheduler ! ScheduleUnload
       }
 
-    case Connect(incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
+    case Initialize(initialCargoCount: Long, incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
+      this.cargoCount = initialCargoCount
       this.incomingChannels = incomingChannels
       this.outgoingChannels = outgoingChannels
-      log.info(s"Connecting $stationName to " +
-        s"incoming channels ${incomingChannels.map(name)} and " +
-        s"outgoing channels ${outgoingChannels.map(name)}")
+      log.info(s"Initializing $name with " +
+        s"cargoCount=$cargoCount, " +
+        s"incomingChannels=${incomingChannels.map(getName)}, " +
+        s"outgoingChannels=${outgoingChannels.map(getName)}")
 
     case Unload(outgoingCargo: Long, outgoingChannel: ActorRef) =>
       if (outgoingChannels.contains(outgoingChannel)) {
         if (cargoCount - outgoingCargo < 0) {
-          log.warning(s"Cannot unload $outgoingCargo cargo because $stationName only has $cargoCount cargo left")
+          log.warning(s"Cannot unload $outgoingCargo cargo because $name only has $cargoCount cargo left")
         } else {
-          log.info(s"Unloading $outgoingCargo cargo from $stationName to ${name(outgoingChannel)}")
+          log.info(s"Unloading $outgoingCargo cargo from $name to ${getName(outgoingChannel)}")
           cargoCount -= outgoingCargo
           outgoingChannel ! Load(outgoingCargo, self)
         }
       } else {
-        log.error(s"Cannot unload cargo from $stationName to an unconnected ${name(outgoingChannel)}")
+        log.error(s"Cannot unload cargo from $name to an unconnected ${getName(outgoingChannel)}")
       }
 
     case Load(incomingCargo: Long, incomingChannel: ActorRef) =>
       if (incomingChannels.contains(incomingChannel)) {
-        log.info(s"Loading $incomingCargo cargo from ${name(incomingChannel)} to $stationName")
+        log.info(s"Loading $incomingCargo cargo from ${getName(incomingChannel)} to $name")
         cargoCount += incomingCargo
       } else {
-        log.error(s"Cannot accept cargo from an unconnected ${name(incomingChannel)} to $stationName")
+        log.error(s"Cannot accept cargo from an unconnected ${getName(incomingChannel)} to $name")
       }
 
     case event =>
@@ -72,11 +65,15 @@ class CargoStation(initialCargoCount: Long)
 }
 
 object CargoStation {
-  def props(initialCargoCount: Long): Props =
-    Props(new CargoStation(initialCargoCount))
+  def props: Props =
+    Props(new CargoStation)
 
   sealed trait CargoStationOperations
-  case class Connect(incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) extends CargoStationOperations
-  case class Unload(cargoCount: Long, outgoingChannel: ActorRef) extends CargoStationOperations
-  case class Load(cargoCount: Long, incomingChannel: ActorRef) extends CargoStationOperations
+  case class Initialize(initialCargoCount: Long,
+                        incomingChannels: Set[ActorRef],
+                        outgoingChannels: Set[ActorRef]) extends CargoStationOperations
+  case class Unload(cargoCount: Long,
+                    outgoingChannel: ActorRef) extends CargoStationOperations
+  case class Load(cargoCount: Long,
+                  incomingChannel: ActorRef) extends CargoStationOperations
 }
