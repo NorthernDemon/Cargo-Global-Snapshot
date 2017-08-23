@@ -3,7 +3,7 @@ package com.global.snapshot.actors
 import akka.actor.Props
 import com.global.snapshot.Config
 import com.global.snapshot.actors.CargoScheduler.ScheduleUnload
-import com.global.snapshot.actors.CargoStation.Initialize
+import com.global.snapshot.actors.CargoStation._
 import com.global.snapshot.actors.CargoStations.{Start, Stop}
 
 class CargoStations
@@ -18,22 +18,22 @@ class CargoStations
       val oslo = context.actorOf(CargoStation.props, "oslo")
 
       stockholm ! Initialize(
-        initialCargoCount = Config.cargoInitialCount,
+        cargoCount = Config.cargoInitialCount,
         incomingChannels = Set(copenhagen, helsinki),
         outgoingChannels = Set(oslo)
       )
       copenhagen ! Initialize(
-        initialCargoCount = Config.cargoInitialCount,
+        cargoCount = Config.cargoInitialCount,
         incomingChannels = Set(oslo),
         outgoingChannels = Set(stockholm, helsinki)
       )
       helsinki ! Initialize(
-        initialCargoCount = Config.cargoInitialCount,
+        cargoCount = Config.cargoInitialCount,
         incomingChannels = Set(copenhagen),
         outgoingChannels = Set(stockholm, oslo)
       )
       oslo ! Initialize(
-        initialCargoCount = Config.cargoInitialCount,
+        cargoCount = Config.cargoInitialCount,
         incomingChannels = Set(stockholm, helsinki),
         outgoingChannels = Set(copenhagen)
       )

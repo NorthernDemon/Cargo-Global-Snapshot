@@ -2,7 +2,7 @@ package com.global.snapshot.actors
 
 import akka.actor.{ActorRef, Props}
 import com.global.snapshot.actors.CargoScheduler.ScheduleUnload
-import com.global.snapshot.actors.CargoStation.{Initialize, Load, Unload}
+import com.global.snapshot.actors.CargoStation._
 
 class CargoStation
   extends CargoActor {
@@ -24,13 +24,16 @@ class CargoStation
         case Some(scheduler) =>
           scheduler ! ScheduleUnload
         case None =>
-          val scheduler = context.actorOf(CargoScheduler.props(self, outgoingChannels), s"${name}Scheduler")
+          val scheduler = context.actorOf(CargoScheduler.props, "scheduler")
           cargoSchedulerActor = Some(scheduler)
           scheduler ! ScheduleUnload
       }
 
-    case Initialize(initialCargoCount: Long, incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
-      this.cargoCount = initialCargoCount
+    case GetOutgoingChannels =>
+      sender() ! outgoingChannels
+
+    case Initialize(cargoCount: Long, incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
+      this.cargoCount = cargoCount
       this.incomingChannels = incomingChannels
       this.outgoingChannels = outgoingChannels
       log.info(s"Initializing $name with " +
@@ -59,6 +62,20 @@ class CargoStation
         log.error(s"Cannot accept cargo from an unconnected ${getName(incomingChannel)} to $name")
       }
 
+    case Connect(channel: ActorRef, channelType: ChannelType) =>
+      log.info(s"Connecting ${getName(channel)} to the $channelType")
+      channelType match {
+        case IncomingChannel => incomingChannels += channel
+        case OutgoingChannel => outgoingChannels += channel
+      }
+
+    case Disconnect(channel: ActorRef, channelType: ChannelType) =>
+      log.info(s"Disconnecting ${getName(channel)} to the $channelType")
+      channelType match {
+        case IncomingChannel => incomingChannels -= channel
+        case OutgoingChannel => outgoingChannels -= channel
+      }
+
     case event =>
       super.receive(event)
   }
@@ -68,12 +85,24 @@ object CargoStation {
   def props: Props =
     Props(new CargoStation)
 
+  sealed trait ChannelType
+  case object IncomingChannel extends ChannelType
+  case object OutgoingChannel extends ChannelType
+
   sealed trait CargoStationOperations
-  case class Initialize(initialCargoCount: Long,
+
+  case object GetOutgoingChannels
+  case class Initialize(cargoCount: Long,
                         incomingChannels: Set[ActorRef],
                         outgoingChannels: Set[ActorRef]) extends CargoStationOperations
+
   case class Unload(cargoCount: Long,
                     outgoingChannel: ActorRef) extends CargoStationOperations
   case class Load(cargoCount: Long,
                   incomingChannel: ActorRef) extends CargoStationOperations
+
+  case class Connect(channel: ActorRef,
+                     channelType: ChannelType) extends CargoStationOperations
+  case class Disconnect(channel: ActorRef,
+                        channelType: ChannelType) extends CargoStationOperations
 }

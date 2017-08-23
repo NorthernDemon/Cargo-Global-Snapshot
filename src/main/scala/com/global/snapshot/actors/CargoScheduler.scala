@@ -1,27 +1,22 @@
 package com.global.snapshot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
+import akka.pattern.ask
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoScheduler.{ScheduleRandomUnloader, ScheduleUnload}
-import com.global.snapshot.actors.CargoStation.Unload
+import com.global.snapshot.actors.CargoScheduler.{ScheduleRandomUnload, ScheduleUnload}
+import com.global.snapshot.actors.CargoStation.{GetOutgoingChannels, Unload}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CargoScheduler(cargoStation: ActorRef,
-                     initialOutgoingChannels: Seq[ActorRef])
+class CargoScheduler
   extends CargoActor {
 
-  require(initialOutgoingChannels.nonEmpty)
-
+  val cargoStation = context.parent
   var cargoScheduler: Option[Cancellable] = None
 
   val random = new scala.util.Random
-  var outgoingChannels: Seq[ActorRef] = Seq.empty[ActorRef]
-
-  override def preStart() = {
-    this.outgoingChannels = initialOutgoingChannels
-  }
 
   override def receive = {
 
@@ -33,14 +28,17 @@ class CargoScheduler(cargoStation: ActorRef,
       cargoScheduler = Some(
         context.system.scheduler.schedule(
           initialDelay = 1 second,
-          interval = 10 seconds,
+          interval = 5 seconds,
           receiver = self,
-          message = ScheduleRandomUnloader
+          message = ScheduleRandomUnload
         )
       )
 
-    case ScheduleRandomUnloader =>
-      cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel)
+    case ScheduleRandomUnload =>
+      (cargoStation ? GetOutgoingChannels)(1 second).mapTo[Set[ActorRef]].flatMap { outgoingChannels =>
+        cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
+        Future.successful()
+      }
 
     case event =>
       super.receive(event)
@@ -49,7 +47,7 @@ class CargoScheduler(cargoStation: ActorRef,
   private def getRandomCargo: Long =
     getRandom(Config.cargoUnloadMin, Config.cargoUnloadMax)
 
-  private def getRandomOutgoingChannel: ActorRef =
+  private def getRandomOutgoingChannel(outgoingChannels: Seq[ActorRef]): ActorRef =
     outgoingChannels(getRandom(0, outgoingChannels.size))
 
   private def getRandom(lowInclusive: Int, highInclusive: Int): Int =
@@ -57,10 +55,10 @@ class CargoScheduler(cargoStation: ActorRef,
 }
 
 object CargoScheduler {
-  def props(cargoStation: ActorRef, outgoingChannels: Set[ActorRef]): Props =
-    Props(new CargoScheduler(cargoStation, outgoingChannels.toSeq))
+  def props: Props =
+    Props(new CargoScheduler)
 
   sealed trait CargoSchedulerOperations
   case object ScheduleUnload extends CargoSchedulerOperations
-  case object ScheduleRandomUnloader extends CargoSchedulerOperations
+  case object ScheduleRandomUnload extends CargoSchedulerOperations
 }
