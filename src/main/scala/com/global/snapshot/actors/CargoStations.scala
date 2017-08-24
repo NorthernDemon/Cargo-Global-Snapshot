@@ -56,34 +56,43 @@ class CargoStations
       oslo ! StartScheduler
 
     case Join =>
-      berlin ! Connect(stockholm, IncomingChannel)
-      berlin ! Connect(stockholm, OutgoingChannel)
-      berlin ! Connect(helsinki, IncomingChannel)
-      berlin ! Connect(helsinki, OutgoingChannel)
+      berlin ! Connect(Set(stockholm, copenhagen, helsinki, oslo), IncomingChannel)
+      berlin ! Connect(Set(stockholm, copenhagen, helsinki, oslo), OutgoingChannel)
 
-      helsinki ! Connect(berlin, IncomingChannel)
-      helsinki ! Connect(berlin, OutgoingChannel)
+      stockholm ! Connect(Set(berlin), IncomingChannel)
+      stockholm ! Connect(Set(berlin), OutgoingChannel)
 
-      stockholm ! Connect(berlin, IncomingChannel)
-      stockholm ! Connect(berlin, OutgoingChannel)
+      copenhagen ! Connect(Set(berlin), IncomingChannel)
+      copenhagen ! Connect(Set(berlin), OutgoingChannel)
+
+      helsinki ! Connect(Set(berlin), IncomingChannel)
+      helsinki ! Connect(Set(berlin), OutgoingChannel)
+
+      oslo ! Connect(Set(berlin), IncomingChannel)
+      oslo ! Connect(Set(berlin), OutgoingChannel)
 
       berlin ! StartScheduler
 
     case Leave =>
+      berlin ! Disconnect(Set(stockholm, copenhagen, helsinki, oslo), IncomingChannel)
+      berlin ! Disconnect(Set(stockholm, copenhagen, helsinki, oslo), OutgoingChannel)
+
+      stockholm ! Disconnect(Set(berlin), IncomingChannel)
+      stockholm ! Disconnect(Set(berlin), OutgoingChannel)
+
+      copenhagen ! Disconnect(Set(berlin), IncomingChannel)
+      copenhagen ! Disconnect(Set(berlin), OutgoingChannel)
+
+      helsinki ! Disconnect(Set(berlin), IncomingChannel)
+      helsinki ! Disconnect(Set(berlin), OutgoingChannel)
+
+      oslo ! Disconnect(Set(berlin), IncomingChannel)
+      oslo ! Disconnect(Set(berlin), OutgoingChannel)
+
       berlin ! StopScheduler
 
-      berlin ! Disconnect(stockholm, IncomingChannel)
-      berlin ! Disconnect(stockholm, OutgoingChannel)
-      berlin ! Disconnect(helsinki, IncomingChannel)
-      berlin ! Disconnect(helsinki, OutgoingChannel)
-
-      helsinki ! Disconnect(berlin, IncomingChannel)
-      helsinki ! Disconnect(berlin, OutgoingChannel)
-
-      stockholm ! Disconnect(berlin, IncomingChannel)
-      stockholm ! Disconnect(berlin, OutgoingChannel)
-
     case Stop =>
+      berlin ! StopScheduler
       stockholm ! StopScheduler
       copenhagen ! StopScheduler
       helsinki ! StopScheduler

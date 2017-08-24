@@ -22,9 +22,8 @@ class CargoScheduler
     case StartScheduler =>
       cancellable match {
         case Some(_) =>
-          log.warning(s"Scheduler for $name is already started")
         case None =>
-          cancellable = Some(context.system.scheduler.schedule(1 second, 5 seconds) {
+          cancellable = Some(context.system.scheduler.schedule(1 second, 3 seconds) {
             (parent ? GetOutgoingChannels) (1 second).mapTo[Set[ActorRef]].map { outgoingChannels =>
               parent ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
             }
@@ -34,10 +33,9 @@ class CargoScheduler
     case StopScheduler =>
       cancellable match {
         case Some(scheduler) =>
-          scheduler.cancel()
+          if (!scheduler.isCancelled) scheduler.cancel()
           cancellable = None
         case None =>
-          log.warning(s"Scheduler for $name is not yet started")
       }
 
     case event =>

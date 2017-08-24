@@ -58,18 +58,18 @@ class CargoStation
         log.error(s"Cannot accept cargo from an unconnected ${getName(incomingChannel)} to $name")
       }
 
-    case Connect(channel: ActorRef, channelType: ChannelType) =>
-      log.info(s"Connecting $channelType ${getName(channel)} to $name")
+    case Connect(channels: Set[ActorRef], channelType: ChannelType) =>
+      log.info(s"Connecting $channelType ${channels.map(getName)} to $name")
       channelType match {
-        case IncomingChannel => incomingChannels += channel
-        case OutgoingChannel => outgoingChannels += channel
+        case IncomingChannel => incomingChannels ++= channels
+        case OutgoingChannel => outgoingChannels ++= channels
       }
 
-    case Disconnect(channel: ActorRef, channelType: ChannelType) =>
-      log.info(s"Disconnecting $channelType ${getName(channel)} from $name")
+    case Disconnect(channels: Set[ActorRef], channelType: ChannelType) =>
+      log.info(s"Disconnecting $channelType ${channels.map(getName)} from $name")
       channelType match {
-        case IncomingChannel => incomingChannels -= channel
-        case OutgoingChannel => outgoingChannels -= channel
+        case IncomingChannel => incomingChannels --= channels
+        case OutgoingChannel => outgoingChannels --= channels
       }
 
     case event =>
@@ -97,8 +97,8 @@ object CargoStation {
   case class Load(cargoCount: Long,
                   incomingChannel: ActorRef) extends CargoStationOperations
 
-  case class Connect(channel: ActorRef,
+  case class Connect(channels: Set[ActorRef],
                      channelType: ChannelType) extends CargoStationOperations
-  case class Disconnect(channel: ActorRef,
+  case class Disconnect(channels: Set[ActorRef],
                         channelType: ChannelType) extends CargoStationOperations
 }
