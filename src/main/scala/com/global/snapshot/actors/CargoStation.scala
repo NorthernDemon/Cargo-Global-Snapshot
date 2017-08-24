@@ -11,7 +11,7 @@ class CargoStation
   var incomingChannels = Set.empty[ActorRef]
   var outgoingChannels = Set.empty[ActorRef]
 
-  val schedulerActor = context.actorOf(CargoScheduler.props, "scheduler")
+  val scheduler = context.actorOf(CargoScheduler.props, "scheduler")
 
   override def postStop() = {
     log.info(s"Shutting down $name with $cargoCount cargo left")
@@ -20,13 +20,13 @@ class CargoStation
   override def receive = {
 
     case StartScheduler =>
-      schedulerActor forward StartScheduler
+      scheduler forward StartScheduler
 
     case StopScheduler =>
-      schedulerActor forward StopScheduler
+      scheduler forward StopScheduler
 
     case GetOutgoingChannels =>
-      sender() ! outgoingChannels
+      sender ! outgoingChannels
 
     case Initialize(cargoCount: Long, incomingChannels: Set[ActorRef], outgoingChannels: Set[ActorRef]) =>
       this.cargoCount = cargoCount
@@ -59,14 +59,14 @@ class CargoStation
       }
 
     case Connect(channel: ActorRef, channelType: ChannelType) =>
-      log.info(s"Connecting ${getName(channel)} to the $channelType")
+      log.info(s"Connecting $channelType ${getName(channel)} to $name")
       channelType match {
         case IncomingChannel => incomingChannels += channel
         case OutgoingChannel => outgoingChannels += channel
       }
 
     case Disconnect(channel: ActorRef, channelType: ChannelType) =>
-      log.info(s"Disconnecting ${getName(channel)} to the $channelType")
+      log.info(s"Disconnecting $channelType ${getName(channel)} from $name")
       channelType match {
         case IncomingChannel => incomingChannels -= channel
         case OutgoingChannel => outgoingChannels -= channel

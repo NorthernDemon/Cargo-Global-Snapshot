@@ -30,7 +30,6 @@ class CargoScheduler
             }
           })
       }
-      context stop self
 
     case StopScheduler =>
       cancellable match {
