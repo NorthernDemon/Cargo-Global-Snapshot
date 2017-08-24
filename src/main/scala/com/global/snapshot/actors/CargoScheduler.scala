@@ -3,7 +3,7 @@ package com.global.snapshot.actors
 import akka.actor.{ActorRef, Cancellable, Props}
 import akka.pattern.ask
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoScheduler.{ScheduleRandomUnload, ScheduleUnload}
+import com.global.snapshot.actors.CargoScheduler.{ScheduleUnload, UnscheduleUnload}
 import com.global.snapshot.actors.CargoStation.{GetOutgoingChannels, Unload}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,31 +14,22 @@ class CargoScheduler
   extends CargoActor {
 
   val cargoStation = context.parent
-  var cargoScheduler: Option[Cancellable] = None
+  var cargoScheduler: Cancellable = _
 
   val random = new scala.util.Random
 
   override def receive = {
 
     case ScheduleUnload =>
-      cargoScheduler match {
-        case Some(scheduler) => if (!scheduler.isCancelled) scheduler.cancel()
-        case None =>
+      cargoScheduler = context.system.scheduler.schedule(1 second, 5 seconds) {
+        (cargoStation ? GetOutgoingChannels) (1 second).mapTo[Set[ActorRef]].flatMap { outgoingChannels =>
+          cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
+          Future.successful()
+        }
       }
-      cargoScheduler = Some(
-        context.system.scheduler.schedule(
-          initialDelay = 1 second,
-          interval = 5 seconds,
-          receiver = self,
-          message = ScheduleRandomUnload
-        )
-      )
 
-    case ScheduleRandomUnload =>
-      (cargoStation ? GetOutgoingChannels)(1 second).mapTo[Set[ActorRef]].flatMap { outgoingChannels =>
-        cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
-        Future.successful()
-      }
+    case UnscheduleUnload =>
+      if (!cargoScheduler.isCancelled) cargoScheduler.cancel()
 
     case event =>
       super.receive(event)
@@ -60,5 +51,5 @@ object CargoScheduler {
 
   sealed trait CargoSchedulerOperations
   case object ScheduleUnload extends CargoSchedulerOperations
-  case object ScheduleRandomUnload extends CargoSchedulerOperations
+  case object UnscheduleUnload extends CargoSchedulerOperations
 }

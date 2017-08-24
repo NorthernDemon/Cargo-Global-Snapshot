@@ -1,17 +1,17 @@
 package com.global.snapshot.actors
 
 import akka.actor.{ActorRef, Props}
-import com.global.snapshot.actors.CargoScheduler.ScheduleUnload
+import com.global.snapshot.actors.CargoScheduler.{ScheduleUnload, UnscheduleUnload}
 import com.global.snapshot.actors.CargoStation._
 
 class CargoStation
   extends CargoActor {
 
-  var cargoSchedulerActor: Option[ActorRef] = None
+  var cargoCount = 0L
+  var incomingChannels = Set.empty[ActorRef]
+  var outgoingChannels = Set.empty[ActorRef]
 
-  var cargoCount: Long = 0
-  var incomingChannels: Set[ActorRef] = Set.empty[ActorRef]
-  var outgoingChannels: Set[ActorRef] = Set.empty[ActorRef]
+  var schedulerActor = context.actorOf(CargoScheduler.props, "scheduler")
 
   override def postStop() = {
     log.info(s"Shutting down $name with $cargoCount cargo left")
@@ -20,14 +20,10 @@ class CargoStation
   override def receive = {
 
     case ScheduleUnload =>
-      cargoSchedulerActor match {
-        case Some(scheduler) =>
-          scheduler ! ScheduleUnload
-        case None =>
-          val scheduler = context.actorOf(CargoScheduler.props, "scheduler")
-          cargoSchedulerActor = Some(scheduler)
-          scheduler ! ScheduleUnload
-      }
+      schedulerActor forward ScheduleUnload
+
+    case UnscheduleUnload =>
+      schedulerActor forward UnscheduleUnload
 
     case GetOutgoingChannels =>
       sender() ! outgoingChannels
