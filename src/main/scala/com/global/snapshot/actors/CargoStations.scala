@@ -2,7 +2,7 @@ package com.global.snapshot.actors
 
 import akka.actor.Props
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoScheduler.ScheduleUnload
+import com.global.snapshot.actors.CargoScheduler.StartScheduler
 import com.global.snapshot.actors.CargoStation._
 import com.global.snapshot.actors.CargoStations.{Start, Stop}
 
@@ -38,10 +38,10 @@ class CargoStations
         outgoingChannels = Set(copenhagen)
       )
 
-      stockholm ! ScheduleUnload
-      copenhagen ! ScheduleUnload
-      helsinki ! ScheduleUnload
-      oslo ! ScheduleUnload
+      stockholm ! StartScheduler
+      copenhagen ! StartScheduler
+      helsinki ! StartScheduler
+      oslo ! StartScheduler
 
     case Stop =>
       context stop self

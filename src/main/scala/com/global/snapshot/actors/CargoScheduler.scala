@@ -3,33 +3,43 @@ package com.global.snapshot.actors
 import akka.actor.{ActorRef, Cancellable, Props}
 import akka.pattern.ask
 import com.global.snapshot.Config
-import com.global.snapshot.actors.CargoScheduler.{ScheduleUnload, UnscheduleUnload}
+import com.global.snapshot.actors.CargoScheduler.{StartScheduler, StopScheduler}
 import com.global.snapshot.actors.CargoStation.{GetOutgoingChannels, Unload}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class CargoScheduler
   extends CargoActor {
 
-  val cargoStation = context.parent
-  var cargoScheduler: Cancellable = _
-
+  val parent = context.parent
   val random = new scala.util.Random
+
+  var cancellable: Option[Cancellable] = None
 
   override def receive = {
 
-    case ScheduleUnload =>
-      cargoScheduler = context.system.scheduler.schedule(1 second, 5 seconds) {
-        (cargoStation ? GetOutgoingChannels) (1 second).mapTo[Set[ActorRef]].flatMap { outgoingChannels =>
-          cargoStation ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
-          Future.successful()
-        }
+    case StartScheduler =>
+      cancellable match {
+        case Some(_) =>
+          log.warning(s"Scheduler for $name is already started")
+        case None =>
+          cancellable = Some(context.system.scheduler.schedule(1 second, 5 seconds) {
+            (parent ? GetOutgoingChannels) (1 second).mapTo[Set[ActorRef]].map { outgoingChannels =>
+              parent ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
+            }
+          })
       }
+      context stop self
 
-    case UnscheduleUnload =>
-      if (!cargoScheduler.isCancelled) cargoScheduler.cancel()
+    case StopScheduler =>
+      cancellable match {
+        case Some(scheduler) =>
+          scheduler.cancel()
+          cancellable = None
+        case None =>
+          log.warning(s"Scheduler for $name is not yet started")
+      }
 
     case event =>
       super.receive(event)
@@ -50,6 +60,6 @@ object CargoScheduler {
     Props(new CargoScheduler)
 
   sealed trait CargoSchedulerOperations
-  case object ScheduleUnload extends CargoSchedulerOperations
-  case object UnscheduleUnload extends CargoSchedulerOperations
+  case object StartScheduler extends CargoSchedulerOperations
+  case object StopScheduler extends CargoSchedulerOperations
 }
