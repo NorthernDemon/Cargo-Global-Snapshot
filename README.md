@@ -67,6 +67,6 @@ Type ```exit``` to terminates the application.
 ## Requirements
 
 * Scala 2.12.3
-* sbt 0.13.15
+* sbt 0.13.16
 * [akka](http://akka.io)
 * [scalatest](http://www.scalatest.org)
