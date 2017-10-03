@@ -1,10 +1,10 @@
 # Global Snapshot Akka
 
+**`NOTE`**: Akka Actor message delivery is **at-most-once**, while Chandy-Lamport algorithm requires **exactly-once**.
+
 ## Status
 
 **`DONE`**: Cargo map setup with message passing
-
-**`CHECK`**: Akka message delivery guarantee and acknowledgement
 
 **`TODO`**: Add tests
 
