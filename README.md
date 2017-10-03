@@ -57,6 +57,7 @@ Type ```log``` to brings the logs back to the screen.
 For the purpose of flexibility there is an additional functionality included.
 It is possible to introduce a new station into the existing cargo map.
 The new station is called Berlin (B) and it is interconnected with every other station in both directions.
+The initial capacity of the Berlin station is double the initial cargo of the others.
 The station can join the cargo map using the ```join``` command.
 The station can leave the cargo map using the ```leave``` command. 
 
