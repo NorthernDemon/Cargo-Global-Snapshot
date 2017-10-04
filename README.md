@@ -14,7 +14,7 @@ The Cargo company operates by moving the cargo between the stations.
 The cargo represents a movable entity.
 The station represents a permanent storage where cargo remains for some time until transferred to another station.
 The transfer only happens between two different stations.
-The stations and transitions form an acyclic directed graph with no parallel edges and referred to as a cargo map.
+The stations and transitions form an directed graph with no self loops, no parallel edges and referred to as a cargo map.
 
 The cargo map consists of 4 stations and 6 transitions.
 The stations are the Nordic capitals: Helsinki (H), Stockholm (S), Oslo (O) and Copenhagen (C).
