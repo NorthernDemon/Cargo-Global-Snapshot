@@ -27,7 +27,7 @@ object Main extends App {
   @tailrec
   private def readCommand(stations: ActorRef): Unit = {
     val command = StdIn.readLine()
-    val commands = "Type in one of the commands: log, join, leave, marker, exit"
+    val commands = "Type in one of the following commands: log, join, leave, marker, exit"
     command match {
       case "log" =>
         println("Started logging the actors")
@@ -39,7 +39,7 @@ object Main extends App {
         println("Berlin station is leaving")
         stations ! Leave
       case "marker" =>
-        println("Sending out the marker")
+        println("Sending out the marker") // TODO: implement
       case "exit" =>
         println("Shutting down the stations")
       case "" =>
