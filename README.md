@@ -4,10 +4,6 @@
 
 **`TODO`**: Add tests for the existing cargo map message passing
 
-**`TODO`**: Implement Chandy-Lamport algorithm (marker message)
-
-**`TODO`**: Add documentation for the ```marker``` command
-
 ## Introduction
 
 The Cargo company operates by moving the cargo between the stations.
@@ -74,6 +70,19 @@ The station can join the cargo map using the ```join``` command.
 The station can leave the cargo map using the ```leave``` command. 
 
 Type ```marker``` to initiate the global snapshot.
+The result of the global snapshot will be displayed in the logs as follows:
+> [akka://cargo/user/stations] Marker sent out from Actor[akka://cargo/user/stations/oslo#1475821110]
+> 
+> [akka://cargo/user/stations/copenhagen] Marker is complete on COPENHAGEN: 77
+> 
+> [akka://cargo/user/stations/helsinki] Marker is complete on HELSINKI: 44
+> 
+> [akka://cargo/user/stations/oslo] Marker is complete on OSLO: 174
+> 
+> [akka://cargo/user/stations/stockholm] Marker is complete on STOCKHOLM: 105 
+
+The total sum of all the cargo printed out must be equal to the total sum of the cargo at the start of the application.
+For instant in the example case, that would be 400 cargo initially distributed between 105 (S), 174 (O), 44 (H) and 77 (C).
 
 Type ```exit``` to terminates the application.
 

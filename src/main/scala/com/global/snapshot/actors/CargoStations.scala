@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, Props}
 import com.global.snapshot.Config
 import com.global.snapshot.actors.CargoScheduler.{StartScheduler, StopScheduler}
 import com.global.snapshot.actors.CargoStation._
-import com.global.snapshot.actors.CargoStations.{Join, Leave, Start, Stop}
+import com.global.snapshot.actors.CargoStations._
 
 class CargoStations
   extends CargoActor {
@@ -100,6 +100,22 @@ class CargoStations
 
       context stop self
 
+    case StartMarker =>
+      (new scala.util.Random).nextInt(4) match {
+        case 0 =>
+          log.info(s"Marker sent out from $stockholm")
+          stockholm ! InitMarker
+        case 1 =>
+          log.info(s"Marker sent out from $copenhagen")
+          copenhagen ! InitMarker
+        case 2 =>
+          log.info(s"Marker sent out from $helsinki")
+          helsinki ! InitMarker
+        case 3 =>
+          log.info(s"Marker sent out from $oslo")
+          oslo ! InitMarker
+      }
+
     case event =>
       super.receive(event)
   }
@@ -114,4 +130,6 @@ object CargoStations {
   case object Join extends CargoStationsOperations
   case object Leave extends CargoStationsOperations
   case object Stop extends CargoStationsOperations
+
+  case object StartMarker extends CargoStationsOperations
 }
