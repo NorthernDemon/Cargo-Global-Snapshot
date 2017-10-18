@@ -3,7 +3,7 @@ package com.global.snapshot
 import akka.actor.{ActorRef, ActorSystem}
 import akka.event.Logging.LogLevel
 import com.global.snapshot.actors.CargoStations
-import com.global.snapshot.actors.CargoStations.{Join, Leave, Start, Stop}
+import com.global.snapshot.actors.CargoStations._
 
 import scala.annotation.tailrec
 import scala.io.StdIn
@@ -39,7 +39,8 @@ object Main extends App {
         println("Berlin station is leaving")
         stations ! Leave
       case "marker" =>
-        println("Sending out the marker") // TODO: implement
+        println("Sending out the marker")
+        stations ! StartMarker
       case "exit" =>
         println("Shutting down the stations")
       case "" =>

@@ -7,6 +7,10 @@ import com.global.snapshot.actors.CargoStation._
 class CargoStation
   extends CargoActor {
 
+  var isRecordingMarker = false
+  var markedCargo = 0L
+  var markedIncomingChannel = Set.empty[ActorRef]
+
   var cargoCount = 0L
   var incomingChannels = Set.empty[ActorRef]
   var outgoingChannels = Set.empty[ActorRef]
@@ -54,6 +58,9 @@ class CargoStation
       if (incomingChannels.contains(incomingChannel)) {
         log.info(s"Loading $incomingCargo cargo from ${getName(incomingChannel)} to $name")
         cargoCount += incomingCargo
+        if (isRecordingMarker && !markedIncomingChannel.contains(incomingChannel)) {
+          markedCargo += incomingCargo
+        }
       } else {
         log.error(s"Cannot accept cargo from an unconnected ${getName(incomingChannel)} to $name")
       }
@@ -72,8 +79,29 @@ class CargoStation
         case OutgoingChannel => outgoingChannels --= channels
       }
 
+    case InitMarker =>
+      propagateMarker()
+
+    case Marker(incomingChannel: ActorRef) =>
+      propagateMarker()
+      markedIncomingChannel ++= Set(incomingChannel)
+      if (markedIncomingChannel == incomingChannels) {
+        log.info(s"Marker is complete on $name: $markedCargo")
+        isRecordingMarker = false
+        markedCargo = 0L
+        markedIncomingChannel = Set.empty[ActorRef]
+      }
+
     case event =>
       super.receive(event)
+  }
+
+  private def propagateMarker() = {
+    if (!isRecordingMarker) {
+      isRecordingMarker = true
+      markedCargo = cargoCount
+      outgoingChannels.foreach(_ ! Marker(self))
+    }
   }
 }
 
@@ -101,4 +129,7 @@ object CargoStation {
                      channelType: ChannelType) extends CargoStationOperations
   case class Disconnect(channels: Set[ActorRef],
                         channelType: ChannelType) extends CargoStationOperations
+
+  case object InitMarker extends CargoStationOperations
+  case class Marker(incomingChannel: ActorRef) extends CargoStationOperations
 }

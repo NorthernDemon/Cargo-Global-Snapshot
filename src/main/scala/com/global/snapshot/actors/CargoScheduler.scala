@@ -23,17 +23,21 @@ class CargoScheduler
       cancellable match {
         case Some(_) =>
         case None =>
-          cancellable = Some(context.system.scheduler.schedule(1 second, 3 seconds) {
-            (parent ? GetOutgoingChannels) (1 second).mapTo[Set[ActorRef]].map { outgoingChannels =>
-              parent ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
+          cancellable = Some(
+            context.system.scheduler.schedule(1 second, 3 seconds) {
+              (parent ? GetOutgoingChannels) (1 second).mapTo[Set[ActorRef]].map { outgoingChannels =>
+                parent ! Unload(getRandomCargo, getRandomOutgoingChannel(outgoingChannels.toSeq))
+              }
             }
-          })
+          )
       }
 
     case StopScheduler =>
       cancellable match {
         case Some(scheduler) =>
-          if (!scheduler.isCancelled) scheduler.cancel()
+          if (!scheduler.isCancelled) {
+            scheduler.cancel()
+          }
           cancellable = None
         case None =>
       }
